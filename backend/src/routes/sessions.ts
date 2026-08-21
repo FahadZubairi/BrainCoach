@@ -84,4 +84,30 @@ router.get('/history', async (req: AuthRequest, res: Response) =>{
     res.json({ sessions: userSessions })
 
 })
+router.get('/stats', async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId
+
+  const allSessions = await db.select().from(sessions)
+    .where(eq(sessions.userId, userId))
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const todaySessions = allSessions.filter(s =>
+    new Date(s.startedAt!) >= today
+  )
+
+  const completedSessions = allSessions.filter(s => s.status === 'completed')
+
+  const avgFocusScore = completedSessions.length > 0
+    ? Math.round(completedSessions.reduce((sum, s) => sum + (s.focusScore || 0), 0) / completedSessions.length)
+    : 0
+
+  res.json({
+    sessionsToday: todaySessions.length,
+    totalSessions: allSessions.length,
+    avgFocusScore,
+    completedSessions: completedSessions.length,
+  })
+})
 export default router
