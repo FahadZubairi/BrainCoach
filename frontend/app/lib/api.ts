@@ -5,6 +5,11 @@ export type Stats = StatsResponse
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
+/** API_BASE as a full URL. The extension runs outside this page, so a relative '/api' means nothing to it. */
+export function absoluteApiBase() {
+  return new URL(API_BASE, window.location.origin).href.replace(/\/+$/, '')
+}
+
 // Fired when the server says we're no longer signed in; AuthContext listens and signs out.
 export const UNAUTHORIZED_EVENT = 'braincoach:unauthorized'
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { FocusEventType, ExtensionTokenResponse } from '../../../shared/api'
 import { useAuth } from '../context/AuthContext'
 import { ActiveSession, loadActiveSession, saveActiveSession } from '../lib/activeSession'
-import { API_BASE, api } from '../lib/api'
+import { absoluteApiBase, api } from '../lib/api'
 import { TabLogEntry, TabStatus, useExtension } from '../lib/extension'
 import { useParked, usePrefs } from '../lib/prefs'
 import * as engine from '../lib/sessionEngine'
@@ -130,7 +130,7 @@ export function useSessionController() {
         setTrackerError('')
         ext.send({
           type: 'START_SESSION', sessionId: session.sessionId, token, taskDescription: session.taskDescription,
-          profile: session.profile, apiBase: API_BASE, strict: prefs.strictMode, intention: session.intention,
+          profile: session.profile, apiBase: absoluteApiBase(), strict: prefs.strictMode, intention: session.intention,
         })
         if (session.pausedAt) ext.send({ type: 'PAUSE_SESSION' })
       })

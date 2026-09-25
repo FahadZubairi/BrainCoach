@@ -45,10 +45,13 @@ instead of letting Next fall back to 3001 (the extension only talks to `localhos
 
 `backend/.env` (never commit, never expose to the client), validated at startup by `backend/src/config.ts`:
 `DATABASE_URL`, `JWT_SECRET` (32+ chars), `GEMINI_API_KEY`, optional `GEMINI_MODEL` (default `gemini-2.5-flash`), optional `PORT`,
-optional `CORS_ORIGINS` (comma-separated; default `http://localhost:3000,http://127.0.0.1:3000`). Read env only through `config`, never `process.env` directly.
+optional `CORS_ORIGINS` (comma-separated; default `http://localhost:3000,http://127.0.0.1:3000`),
+optional `TRUST_PROXY` (proxy hops in front of the API; 2 behind Vercel rewrite + Render). Read env only through `config`, never `process.env` directly.
 
 Frontend (public, safe to expose): `NEXT_PUBLIC_API_URL` (default `http://localhost:5000`),
 `NEXT_PUBLIC_EXTENSION_URL` (Chrome Web Store listing, once published).
+Server-only build setting: `BACKEND_URL` — when set, `/api/*` is proxied to it (set `NEXT_PUBLIC_API_URL=/api`) so the
+session cookie stays first-party. Production extension zip: `python scripts/pack_extension.py --app-url https://<app>`.
 Nothing secret may ever use the `NEXT_PUBLIC_` prefix.
 
 ## Directory layout

@@ -8,6 +8,7 @@ import { errorHandler, notFound } from './middleware/errors'
 
 const app = express()
 app.disable('x-powered-by')
+if (config.TRUST_PROXY > 0) app.set('trust proxy', config.TRUST_PROXY)
 
 // Only the web app may call the API from a web page. The BrainCoach extension doesn't need CORS
 // (its host_permissions bypass it), and allowing chrome-extension:// origins would let *other*

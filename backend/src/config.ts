@@ -12,6 +12,9 @@ const Env = z.object({
   // Comma-separated browser origins allowed to call the API.
   CORS_ORIGINS: z.string().default('http://localhost:3000,http://127.0.0.1:3000'),
   // Send the session cookie only over HTTPS. Must be true in production.
+  // Proxy hops in front of the API (e.g. 2 for Vercel rewrite + Render). Without it every request
+  // appears to come from the proxy, so rate limits would be shared by all users.
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   COOKIE_SECURE: z.enum(['true', 'false']).default(process.env.NODE_ENV === 'production' ? 'true' : 'false'),
 })
 
