@@ -74,7 +74,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
     throw new ApiError(message ?? 'Your session has expired. Please sign in again.', 401)
   }
-  if (RETRYABLE_STATUS.has(res.status)) throw new ApiError('BrainCoach is temporarily unavailable. Please try again in a moment.', res.status)
+  if (RETRYABLE_STATUS.has(res.status)) throw new ApiError(message ?? 'BrainCoach is temporarily unavailable. Please try again in a moment.', res.status)
   if (!res.ok) throw new ApiError(message ?? `Request failed (${res.status})`, res.status)
   return data as T
 }
