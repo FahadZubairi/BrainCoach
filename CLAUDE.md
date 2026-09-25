@@ -65,7 +65,8 @@ frontend/app/
   lib/                  non-visual logic: api client, sessionEngine (pure rules), hooks, local stores
   globals.css           design tokens (CSS variables) + motion system
 backend/src/
-  index.ts              app setup, middleware, router mounting      config.ts   validated env
+  app.ts                app setup, middleware, router mounting      config.ts   validated env
+  index.ts              local/server entry (listen)                 ../api/index.ts   Vercel serverless entry
   routes/               auth.ts, sessions.ts, coach/{briefings,insights,tracking}.ts
   services/             gemini.ts (AI calls, null on failure), tabRules.ts (single source of site rules)
   schemas.ts, http.ts   Zod request schemas + parse()               serializers.ts   DB rows → shared types
