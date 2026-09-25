@@ -8,7 +8,7 @@
     "build": "tsc",
     "start": "node dist/backend/src/index.js",
     "db:push": "drizzle-kit push --config=drizzle.config.ts",
-    "vercel-build": "tsc --noEmit && node -e \"require('fs').mkdirSync('public',{recursive:true})\""
+    "vercel-build": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
