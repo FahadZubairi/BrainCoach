@@ -18,6 +18,10 @@ export const sessions = pgTable('sessions', {
   exercisedToday: boolean('exercised_today').default(false),
   focusScore: integer('focus_score').default(0),
   status: text('status').default('active'), // active / completed / abandoned
+  plannedMinutes: integer('planned_minutes'), // timebox chosen at start; null = open-ended
+  intention: text('intention'), // "If I get distracted, then I will …"
+  outcome: text('outcome'), // done / partly / not_done — self-reported at the end
+  reflection: text('reflection'),
   startedAt: timestamp('started_at').defaultNow(),
   endedAt: timestamp('ended_at'),
 })
