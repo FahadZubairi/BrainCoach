@@ -1,0 +1,314 @@
+@import "tailwindcss";
+
+/*
+  BrainCoach design tokens
+
+  Palette: a warm near-black neutral scale (hue ~90°, very low chroma) so the dark UI feels
+  like paper in low light rather than a cold screen. One accent — a desaturated sage — carries
+  every "focused / on track / primary action" meaning. Warm amber and a soft coral are reserved
+  strictly for semantic states (caution, off-task), so colour always means something.
+
+  Contrast (on --bg): fg 16.4:1 · fg-2 7.9:1 · fg-3 5.4:1 (4.7:1 on raised surfaces) · accent 10.4:1 — all WCAG AA or better.
+*/
+:root {
+  --bg: #0e0e0d;
+  --surface: #151514;
+  --surface-2: #1c1c1a;
+  --line: #262624;
+  --line-strong: #353532;
+
+  --fg: #edece8;
+  --fg-2: #a8a69f;
+  --fg-3: #8a8881;
+
+  --accent: #9cc9a9;
+  --accent-hover: #b2d8bd;
+  --accent-ink: #0d1a11;
+  --accent-soft: rgb(156 201 169 / 0.1);
+
+  --warn: #e3bd7a;
+  --warn-soft: rgb(227 189 122 / 0.1);
+  --danger: #e58b7b;
+  --danger-soft: rgb(229 139 123 / 0.1);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(156 201 169 / 0.3);
+}
+
+/* One consistent, clearly visible keyboard focus indicator everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.animate-in {
+  animation: fade-up 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.pulse-dot {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* ── Motion ──
+   One vocabulary everywhere: things arrive by rising 8–24px while fading in, leave faster than they
+   arrive, and ease out (cubic-bezier .2,.8,.2,1). Motion confirms cause and effect; it never decorates. */
+
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-exit: 140ms;
+  --duration-enter: 220ms;
+  --duration-move: 380ms;
+}
+
+/* Page transitions (browser View Transitions API, started by components/NavLink.tsx).
+   Only the page content (view-transition-name: page) moves. Direction follows nav order:
+   going to a tab on the right slides content left, and vice versa. */
+::view-transition {
+  pointer-events: none;
+}
+/* Everything not explicitly named stays put: no whole-screen crossfade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(page) {
+  animation: var(--duration-exit) ease-in both vt-fade reverse, var(--duration-move) var(--ease-out) both vt-slide reverse;
+}
+::view-transition-new(page) {
+  animation: var(--duration-enter) ease-out var(--duration-exit) both vt-fade, var(--duration-move) var(--ease-out) both vt-slide;
+}
+html[data-nav="forward"]::view-transition-old(page) { --slide-offset: -40px 0; }
+html[data-nav="forward"]::view-transition-new(page) { --slide-offset: 40px 0; }
+html[data-nav="back"]::view-transition-old(page) { --slide-offset: 40px 0; }
+html[data-nav="back"]::view-transition-new(page) { --slide-offset: -40px 0; }
+html[data-nav="fade"]::view-transition-old(page) { --slide-offset: 0 0; }
+html[data-nav="fade"]::view-transition-new(page) { --slide-offset: 0 12px; }
+/* Pages have different heights; let the group snap rather than stretch the snapshots. */
+::view-transition-group(page) {
+  animation-duration: 0s;
+}
+::view-transition-image-pair(page) {
+  isolation: auto;
+}
+
+/* The header is the spatial anchor: it never moves during a page change. */
+::view-transition-group(site-header),
+::view-transition-group(site-tabbar) { animation: none; z-index: 100; }
+::view-transition-old(site-header),
+::view-transition-old(site-tabbar) { display: none; }
+::view-transition-new(site-header),
+::view-transition-new(site-tabbar) { animation: none; }
+/* …but the active-tab pill glides to its new position. */
+::view-transition-group(nav-pill),
+::view-transition-group(nav-pill-mobile) {
+  animation-duration: var(--duration-move);
+  animation-timing-function: var(--ease-out);
+  z-index: 101;
+  /* Screen-blend so the tab labels it glides over stay readable mid-flight. */
+  mix-blend-mode: screen;
+}
+
+@keyframes vt-fade {
+  from { opacity: 0; filter: blur(2px); }
+  to { opacity: 1; filter: blur(0); }
+}
+@keyframes vt-slide {
+  from { translate: var(--slide-offset, 0 0); }
+  to { translate: 0 0; }
+}
+
+/* Scroll reveal: pure CSS scroll-driven animation, so it costs no JS and simply doesn't run in
+   browsers without support (content is visible either way). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 90%;
+    }
+  }
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(28px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Staggered entrance for lists and grids on first paint */
+.stagger > * {
+  animation: fade-up 0.5s var(--ease-out) both;
+}
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(n + 7) { animation-delay: 300ms; }
+
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Logo entrance: the brain traces itself in, then lights up (glow + halo). */
+.logo-animate .logo-lines path {
+  stroke-dasharray: 100;
+  animation: logo-draw 1.2s var(--ease-out) 0.1s both;
+}
+.logo-animate .logo-glow,
+.logo-animate .logo-halo {
+  animation: logo-light 1.6s ease-out 0.9s both;
+}
+@keyframes logo-draw {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes logo-light {
+  0% { opacity: 0; }
+  45% { opacity: 1; }
+  70% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+/* Login background brain: fades in after the logo lights up, then breathes very slowly. */
+.login-brain {
+  animation: login-brain-in 2s ease-out 1.2s both, login-brain-breathe 9s ease-in-out 3.2s infinite;
+}
+@keyframes login-brain-in {
+  from { opacity: 0; scale: 0.96; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes login-brain-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Range slider (break length) */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+}
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+.range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+.range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--fg);
+  box-shadow: 0 0 0 4px rgb(156 201 169 / 0.25);
+  transition: box-shadow 150ms;
+}
+.range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fg);
+  box-shadow: 0 0 0 4px rgb(156 201 169 / 0.25);
+}
+.range:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgb(156 201 169 / 0.3); }
+.range:focus-visible { outline: none; }
+.range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
+
+/* Checkbox completion: a small, satisfying confirmation */
+@keyframes pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.pop {
+  animation: pop 0.32s var(--ease-out) both;
+}
+
+/* Gentle attention pull for time-sensitive banners (break prompt, intention reminder) */
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+.slide-down {
+  animation: slide-down 0.35s var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

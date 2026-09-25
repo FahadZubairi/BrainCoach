@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies (at any depth: backend/, frontend/)
-node_modules/
+# dependencies
+/node_modules
 dist/
 /.pnp
 .pnp.*
@@ -15,7 +15,7 @@ dist/
 /coverage
 
 # next.js
-.next/
+/.next/
 /out/
 
 # production
@@ -33,9 +33,6 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
-.env
-backend/.env
-
 
 # vercel
 .vercel
@@ -43,11 +40,3 @@ backend/.env
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# local-only artefacts
-*.log
-
-# face-api.js ships many models; the app only loads the tiny face detector (lib/useFaceTracker.ts)
-frontend/public/models/*
-!frontend/public/models/tiny_face_detector_model-weights_manifest.json
-!frontend/public/models/tiny_face_detector_model-shard1
