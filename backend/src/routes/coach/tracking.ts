@@ -88,11 +88,13 @@ reason is a short phrase (max 8 words).`, {
     type: SchemaType.OBJECT,
     properties: { relevant: { type: SchemaType.BOOLEAN }, reason: { type: SchemaType.STRING } },
     required: ['relevant', 'reason'],
-  })
+  }, undefined, true)
 
   const verdict = AiTabVerdict.safeParse(raw)
   if (!verdict.success) {
-    res.json({ relevant: true, reason: 'Unclassified' }) // don't penalise the user for an AI hiccup
+    // Don't penalise the user for an AI hiccup, but say so rather than claiming "on task". Not cached,
+    // so the next look at this tab tries again.
+    res.json({ relevant: true, reason: 'Couldn’t classify', neutral: true })
     return
   }
   if (tabCache.size > 500) tabCache.clear()
@@ -102,7 +104,7 @@ reason is a short phrase (max 8 words).`, {
 
 // Screen check: frames are analysed in memory and never written anywhere; only the verdict is returned.
 const lastScreenCheck = new Map<number, number>()
-const SCREEN_MIN_INTERVAL_MS = 8_000
+const SCREEN_MIN_INTERVAL_MS = 4_000 // the client snapshots every 5 s and skips unchanged screens
 const AiScreenVerdict = z.object({ relevant: z.boolean(), activity: z.string(), app: z.string() })
 
 router.post('/evaluate-screen', async (req: AuthRequest, res: Response<ScreenVerdict | ErrorResponse>) => {
@@ -137,7 +139,7 @@ Be strict with entertainment, social feeds, shopping and games unless clearly ab
       app: { type: SchemaType.STRING },
     },
     required: ['relevant', 'activity', 'app'],
-  }, body.image.slice('data:image/jpeg;base64,'.length))
+  }, body.image.slice('data:image/jpeg;base64,'.length), true)
 
   const verdict = AiScreenVerdict.safeParse(raw)
   if (!verdict.success) {

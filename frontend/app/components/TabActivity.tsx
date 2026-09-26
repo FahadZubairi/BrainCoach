@@ -4,7 +4,7 @@ import { TabLogEntry } from '../lib/extension'
 import { Eyebrow, StatusDot, cx } from './ui'
 
 // If no report arrives in this long, something is wrong. The extension checks every 30s;
-// screen check every 2 minutes.
+// screen check every 5 seconds.
 const STALE_AFTER_MS = { extension: 75_000, screen: 5 * 60_000 }
 
 function duration(ms: number) {
@@ -54,7 +54,7 @@ export function TabActivity({ log, lastCheckedAt, now, paused, mode = 'extension
 
       {recent.length === 0 ? (
         <p className="mt-3 text-[13px] text-fg-3">
-          {mode === 'screen' ? 'The first screen check runs a few seconds after you leave this tab, then every 2 minutes.' : 'Switch to another tab and it will appear here within a second.'}
+          {mode === 'screen' ? 'The first screen check runs as soon as you leave this tab, then every 5 seconds.' : 'Switch to another tab and it will appear here within a second.'}
         </p>
       ) : (
         <ol className="mt-3 space-y-0.5" aria-label="Sites visited this session, newest first">
@@ -75,7 +75,7 @@ export function TabActivity({ log, lastCheckedAt, now, paused, mode = 'extension
 
       {mode === 'screen' ? (
         <p className="mt-3 text-xs leading-relaxed text-fg-3">
-          Screen check looks once every 2 minutes. Snapshots are analysed and discarded, never stored. After 2 minutes off task you&apos;ll get a notification.
+          Screen check looks every 5 seconds and only sends a snapshot when your screen changes. Snapshots are analysed and discarded, never stored. After 2 minutes off task you&apos;ll get a notification.
         </p>
       ) : (
       <p className="mt-3 text-xs leading-relaxed text-fg-3">

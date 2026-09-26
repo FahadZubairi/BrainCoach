@@ -83,7 +83,7 @@ export function TrackingCard({ c }: { c: SessionController }) {
                 </p>
                 <div className="rounded-xl border border-line bg-bg px-4 py-3 text-xs leading-relaxed text-fg-3">
                   <p className="mb-1 font-medium text-fg-2">Privacy</p>
-                  A low-resolution snapshot is sent to BrainCoach&apos;s AI a few seconds after you leave this tab, then every 2 minutes.
+                  While you&apos;re on another tab, a low-resolution snapshot is taken every 5 seconds and sent to BrainCoach&apos;s AI only when your screen has changed.
                   Snapshots are analysed and immediately discarded, never saved. Only the verdict (e.g. &ldquo;YouTube · off task&rdquo;) is kept.
                   Your browser shows a sharing indicator the whole time, and you can stop at any moment.
                 </div>

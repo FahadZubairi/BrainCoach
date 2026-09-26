@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BrainCoach Focus Tracker",
-  "version": "3.0",
+  "version": "3.1",
   "description": "Tells BrainCoach whether the tab you're on matches the task you're focusing on.",
   "permissions": [
     "tabs",

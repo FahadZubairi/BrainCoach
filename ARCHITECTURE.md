@@ -59,7 +59,7 @@ All responses are JSON; errors are `{ error }`. Every route except `/auth/*` and
 | GET | `/coach/insights` | — | AI pattern analysis (needs ≥3 finished sessions); stored in `patterns` |
 | POST | `/coach/session-profile` | `taskDescription` | AI keyword profile used by the tab classifier |
 | POST | `/coach/evaluate-tab` | `tabTitle, tabUrl, taskDescription, sessionProfile` | tab relevance: site lists → keywords → Gemini; cached |
-| POST | `/coach/evaluate-screen` | `image` (JPEG data URL ≤1 MB), `taskDescription` | screen-check verdict via Gemini vision; frame not stored; ≥8 s apart per user |
+| POST | `/coach/evaluate-screen` | `image` (JPEG data URL ≤1 MB), `taskDescription` | screen-check verdict via Gemini vision; frame not stored; ≥4 s apart per user; uses `GEMINI_FAST_MODEL` |
 
 ## Authentication
 
@@ -99,8 +99,9 @@ All responses are JSON; errors are `{ error }`. Every route except `/auth/*` and
   downloaded at session start; only unknown sites go to `/coach/evaluate-tab` (badge shows "…" meanwhile). State writes are
   serialised (`withState`) so a slow check can't overwrite a newer pause. Strict mode redirects off-topic tabs to `pause.html`.
 - *Screen check* (`useScreenCheck` + `screenFrame.ts`): holds a `getDisplayMedia` track, grabs live frames with
-  `ImageCapture.grabFrame()` (a background-tab `<video>` returns stale frames), checks ~5 s after the user leaves BrainCoach and
-  then every 2 minutes, never while BrainCoach is focused, and warns if only a tab/window was shared.
+  `ImageCapture.grabFrame()` (a background-tab `<video>` returns stale frames), snapshots right after the user leaves BrainCoach and
+  then every 5 s, never while BrainCoach is focused, and warns if only a tab/window was shared. A 32×18 greyscale
+  fingerprint is compared locally; an unchanged screen reuses the last verdict (for up to 60 s) instead of uploading.
 - *Guided setup:* choosing Extension without it installed opens `/extension`, which offers the packaged zip
   (or the store link) and detects the connection live.
 

@@ -57,8 +57,9 @@ export async function remoteVerdict(tab, session) {
   const key = `${hostOf(tab.url)}|${tab.title}`
   try {
     const data = await evaluateTabRemote(session, tab)
-    const verdict = { relevant: !!data.relevant, reason: data.reason || '' }
-    remoteCache.set(key, verdict)
+    const verdict = { relevant: !!data.relevant, reason: data.reason || '', neutral: !!data.neutral }
+    // A "couldn't classify" answer isn't cached, so the next switch to this tab asks again.
+    if (!verdict.neutral) remoteCache.set(key, verdict)
     if (remoteCache.size > 500) remoteCache.clear()
     return verdict
   } catch (err) {

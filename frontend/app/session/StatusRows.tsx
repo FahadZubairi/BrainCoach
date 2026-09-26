@@ -89,7 +89,7 @@ export function TrackerStatus({ mode, connected, status, screenState, surface, p
   const tab = status?.tab
   if (!tab) {
     return mode === 'screen'
-      ? <StatusRow icon="browser" title="Screen check on" tone="accent" detail="Checks ~5 s after you leave this tab, then every 2 min" />
+      ? <StatusRow icon="browser" title="Screen check on" tone="accent" detail="Checks every 5 s while you’re on another tab" />
       : <StatusRow icon="browser" title="Watching tabs" tone="accent" detail="Switch tabs to see it react" />
   }
   if (tab.pending) return <StatusRow icon="browser" title="Checking…" tone="muted" detail={tab.host} pulse />

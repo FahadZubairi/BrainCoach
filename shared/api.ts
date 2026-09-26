@@ -113,6 +113,8 @@ export interface SessionProfileResponse {
 export interface TabVerdict {
   relevant: boolean
   reason: string
+  /** true when the tab couldn't be classified; counts as on task but is shown as unknown */
+  neutral?: boolean
 }
 
 export interface TabRules {

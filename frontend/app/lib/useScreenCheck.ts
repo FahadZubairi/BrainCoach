@@ -5,18 +5,22 @@ import type { ScreenVerdict } from '../../../shared/api'
 import { ApiError, api } from './api'
 import { toastOnce } from './toast'
 import { TabLogEntry, TabStatus } from './extension'
-import { grabFrame } from './screenFrame'
+import { frameDistance, grabFrame } from './screenFrame'
 
 // Screen check: the no-extension alternative to tab tracking. The user shares their screen once per
-// session. A check runs ~5 s after they leave the BrainCoach tab, then every 2 minutes while away.
-// Each check sends one downscaled frame for an on-task verdict; frames are never stored.
+// session. While they're away from BrainCoach a snapshot is taken every 5 s. It's only sent for an AI
+// verdict when the screen has visibly changed (or the last verdict is a minute old); otherwise the last
+// verdict still applies. Frames are never stored.
 
 export type ScreenState = 'off' | 'requesting' | 'active' | 'denied' | 'stopped' | 'unsupported'
 /** What was shared. Anything but the whole screen only shows that one tab/window. */
 export type SharedSurface = 'monitor' | 'window' | 'browser' | 'unknown'
 
-const CHECK_EVERY_MS = 2 * 60_000
-const CHECK_AFTER_LEAVING_MS = 5_000
+const CHECK_EVERY_MS = 5_000
+const CHECK_AFTER_LEAVING_MS = 1_000
+// Mean greyscale difference (0–255) below which two snapshots count as the same screen.
+const SAME_SCREEN_DISTANCE = 6
+const REUSE_VERDICT_MS = 60_000
 const OFF_TASK_LOG_MS = 2 * 60_000
 const LOG_LIMIT = 60
 
@@ -92,15 +96,17 @@ export function useScreenCheck({ enabled, paused, taskDescription, onEvent }: {
   useEffect(() => {
     if (!enabled || state !== 'active') return
     let cancelled = false
+    let busy = false // never overlap checks: a slow AI answer just delays the next snapshot
     let offSince: number | null = null
     let lostLogged = false
     let log: TabLogEntry[] = []
     let timer: ReturnType<typeof setTimeout> | undefined
+    let last: { print: Uint8ClampedArray; verdict: ScreenVerdict; at: number } | null = null
 
     const record = (entry: Omit<TabLogEntry, 'start' | 'end'>, now: number) => {
-      const last = log[log.length - 1]
-      if (last && last.end === null && last.host === entry.host && last.relevant === entry.relevant) return
-      if (last && last.end === null) last.end = now
+      const prev = log[log.length - 1]
+      if (prev && prev.end === null && prev.host === entry.host && prev.relevant === entry.relevant) return
+      if (prev && prev.end === null) prev.end = now
       log = [...log, { ...entry, start: now, end: null }].slice(-LOG_LIMIT)
     }
     const publish = (tab: TabStatus['tab'], now: number) =>
@@ -111,40 +117,7 @@ export function useScreenCheck({ enabled, paused, taskDescription, onEvent }: {
       timer = setTimeout(check, ms)
     }
 
-    async function check() {
-      if (cancelled) return
-      schedule(CHECK_EVERY_MS)
-      if (live.current.paused) return
-      const now = Date.now()
-
-      // On BrainCoach itself there's nothing to judge, and no need to send a frame.
-      if (onBrainCoach()) {
-        offSince = null
-        record({ host: 'BrainCoach', title: 'BrainCoach', relevant: true, neutral: true, reason: 'This tab' }, now)
-        publish({ url: '', host: 'BrainCoach', title: 'BrainCoach', relevant: true, reason: 'This tab', neutral: true }, now)
-        return
-      }
-
-      const track = trackRef.current
-      const image = track ? await grabFrame(track) : null
-      if (!image || cancelled) return
-
-      let verdict: ScreenVerdict
-      try {
-        verdict = await api<ScreenVerdict>('/coach/evaluate-screen', {
-          method: 'POST',
-          body: JSON.stringify({ image, taskDescription: live.current.taskDescription }),
-        })
-      } catch (err) {
-        // No penalty either way; we just try again next round. Only surface real outages, not rate limits.
-        if (!(err instanceof ApiError && err.status === 429)) {
-          toastOnce('screen-check', { tone: 'warn', message: 'Screen check couldn’t reach BrainCoach. It will keep trying.' })
-        }
-        return
-      }
-      if (cancelled) return
-
-      const at = Date.now()
+    const apply = (verdict: ScreenVerdict, at: number) => {
       const host = verdict.app || verdict.activity || 'Screen'
       const neutral = !!verdict.unavailable
       if (verdict.relevant) {
@@ -165,7 +138,57 @@ export function useScreenCheck({ enabled, paused, taskDescription, onEvent }: {
       publish({ url: '', host, title: verdict.activity, relevant: verdict.relevant, reason: verdict.activity, neutral }, at)
     }
 
-    // Leaving BrainCoach is the moment drift usually starts: check shortly after, then every 2 min.
+    async function check() {
+      if (cancelled) return
+      schedule(CHECK_EVERY_MS)
+      if (busy || live.current.paused) return
+      const now = Date.now()
+
+      // On BrainCoach itself there's nothing to judge, and no need to send a frame.
+      if (onBrainCoach()) {
+        offSince = null
+        last = null
+        record({ host: 'BrainCoach', title: 'BrainCoach', relevant: true, neutral: true, reason: 'This tab' }, now)
+        publish({ url: '', host: 'BrainCoach', title: 'BrainCoach', relevant: true, reason: 'This tab', neutral: true }, now)
+        return
+      }
+
+      busy = true
+      try {
+        const track = trackRef.current
+        const frame = track ? await grabFrame(track) : null
+        if (!frame || cancelled) return
+
+        // Same screen as the last analysed one: the verdict still holds, so skip the upload.
+        if (last && !last.verdict.unavailable && now - last.at < REUSE_VERDICT_MS
+          && frameDistance(frame.print, last.print) < SAME_SCREEN_DISTANCE) {
+          apply(last.verdict, now)
+          return
+        }
+
+        let verdict: ScreenVerdict
+        try {
+          verdict = await api<ScreenVerdict>('/coach/evaluate-screen', {
+            method: 'POST',
+            body: JSON.stringify({ image: frame.image, taskDescription: live.current.taskDescription }),
+          })
+        } catch (err) {
+          // No penalty either way; the next snapshot tries again. Rate limits are expected, outages aren't.
+          if (!(err instanceof ApiError && err.status === 429)) {
+            toastOnce('screen-check', { tone: 'warn', message: 'Screen check couldn’t reach BrainCoach. It will keep trying.' })
+          }
+          return
+        }
+        if (cancelled) return
+        const at = Date.now()
+        last = { print: frame.print, verdict, at }
+        apply(verdict, at)
+      } finally {
+        busy = false
+      }
+    }
+
+    // Leaving BrainCoach is the moment drift usually starts: look right away instead of waiting a round.
     const onLeave = () => { if (!onBrainCoach()) schedule(CHECK_AFTER_LEAVING_MS) }
     document.addEventListener('visibilitychange', onLeave)
     window.addEventListener('blur', onLeave)

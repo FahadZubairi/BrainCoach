@@ -24,11 +24,11 @@ export async function generateText(prompt: string): Promise<string | null> {
 }
 
 /** Structured output. `image` (base64 JPEG, no data: prefix) makes it a vision call. */
-export async function generateJson(prompt: string, schema: ResponseSchema, image?: string): Promise<unknown | null> {
+export async function generateJson(prompt: string, schema: ResponseSchema, image?: string, fast = false): Promise<unknown | null> {
   if (!genai) return null
   try {
     const model = genai.getGenerativeModel({
-      model: config.GEMINI_MODEL,
+      model: fast ? config.GEMINI_FAST_MODEL : config.GEMINI_MODEL,
       generationConfig: { responseMimeType: 'application/json', responseSchema: schema },
     })
     const parts = image ? [{ text: prompt }, { inlineData: { mimeType: 'image/jpeg', data: image } }] : prompt

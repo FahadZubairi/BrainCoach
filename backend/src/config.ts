@@ -9,6 +9,8 @@ const Env = z.object({
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters (32+ recommended)'),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  // Quick on-task verdicts (tab and screen checks) run every few seconds: a faster, cheaper model.
+  GEMINI_FAST_MODEL: z.string().default('gemini-2.5-flash-lite'),
   // Comma-separated browser origins allowed to call the API.
   CORS_ORIGINS: z.string().default('http://localhost:3000,http://127.0.0.1:3000'),
   // Send the session cookie only over HTTPS. Must be true in production.
