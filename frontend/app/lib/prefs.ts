@@ -11,15 +11,20 @@ export interface Prefs {
   strictMode: boolean
   tracking: 'extension' | 'screen' | 'off' // how browser activity is tracked during sessions
   lastIntention: string
+  /** Trackers the user has read the privacy explanation for and agreed to. */
+  consent: Partial<Record<Tracker, true>>
 }
+
+export type Tracker = 'camera' | 'extension' | 'screen'
 
 const DEFAULTS: Prefs = {
   dailyGoalMinutes: 120,
   plannedMinutes: 50,
   breakMinutes: 5,
   strictMode: false,
-  tracking: 'extension',
+  tracking: 'off', // privacy by default: tracking starts only after the user opts in
   lastIntention: '',
+  consent: {},
 }
 
 export function usePrefs(userId: number | undefined) {

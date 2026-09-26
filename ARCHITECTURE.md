@@ -114,3 +114,11 @@ All responses are JSON; errors are `{ error }`. Every route except `/auth/*` and
 ## Known gaps
 - No database-level row-level security (Neon/Postgres RLS); isolation relies on the query filters above.
 - `drizzle-kit` (dev-only) pulls in an esbuild version with a moderate dev-server advisory; not shipped to production.
+
+## Privacy
+
+- Every tracker is off by default. The first time one is turned on, `PrivacyConsent` explains what it uses, where it goes,
+  what's kept and how to stop; consent is remembered per tracker in prefs (`consent`). `/privacy` is the public version.
+- Camera frames never leave the browser. Screen snapshots are analysed and discarded. The extension strips query strings,
+  fragments, email addresses and long numbers from tab URLs and titles before calling `/coach/evaluate-tab`.
+- Face detection checks the whole 640×480 frame, then overlapping tiles, so small or off-centre faces are still found.

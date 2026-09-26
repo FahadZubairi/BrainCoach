@@ -9,6 +9,7 @@ const CHECK_EVERY_MS = 1000
 const MISSES_BEFORE_ABSENT = 3
 
 type FaceApi = typeof import('face-api.js')
+type Options = InstanceType<FaceApi['TinyFaceDetectorOptions']>
 let modelPromise: Promise<FaceApi> | null = null
 
 // face-api.js pulls in TensorFlow.js, so load it lazily and only once.
@@ -21,6 +22,31 @@ function loadFaceApi() {
     modelPromise.catch(() => { modelPromise = null })
   }
   return modelPromise
+}
+
+// Anywhere in the frame: the whole frame is checked first. The tiny detector shrinks it to ~416 px, so a
+// face that's small, far away or near an edge can vanish; if nothing is found, overlapping tiles (each
+// ~2/3 of the frame, enlarged) are checked too, which catches faces in corners and at the edges.
+const TILES = [
+  [0, 0], [1 / 3, 0], [0, 1 / 3], [1 / 3, 1 / 3], [1 / 6, 1 / 6],
+] as const
+const TILE_SIZE = 2 / 3
+let tileCanvas: HTMLCanvasElement | null = null
+
+async function faceInFrame(faceapi: FaceApi, video: HTMLVideoElement, full: Options, tile: Options) {
+  if (await faceapi.detectSingleFace(video, full)) return true
+  const w = video.videoWidth
+  const h = video.videoHeight
+  tileCanvas ??= document.createElement('canvas')
+  tileCanvas.width = Math.round(w * TILE_SIZE)
+  tileCanvas.height = Math.round(h * TILE_SIZE)
+  const ctx = tileCanvas.getContext('2d')
+  if (!ctx) return false
+  for (const [x, y] of TILES) {
+    ctx.drawImage(video, x * w, y * h, w * TILE_SIZE, h * TILE_SIZE, 0, 0, tileCanvas.width, tileCanvas.height)
+    if (await faceapi.detectSingleFace(tileCanvas, tile)) return true
+  }
+  return false
 }
 
 export function useFaceTracker(enabled: boolean) {
@@ -58,7 +84,8 @@ export function useFaceTracker(enabled: boolean) {
       let stream: MediaStream
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' },
+          // 640×480 keeps small or distant faces detectable; frames never leave the device.
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
           audio: false,
         })
       } catch (err) {
@@ -87,16 +114,17 @@ export function useFaceTracker(enabled: boolean) {
       }
       if (cancelled) return
 
-      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 })
+      const full = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.35 })
+      const tile = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 })
 
       const tick = async () => {
         if (cancelled) return
         const video = videoEl.current
         if (video && video.readyState >= 2 && video.videoWidth > 0) {
           try {
-            const detection = await faceapi.detectSingleFace(video, options)
+            const found = await faceInFrame(faceapi, video, full, tile)
             if (cancelled) return
-            if (detection) {
+            if (found) {
               misses = 0
               setState('present')
               setAbsentSince(null)

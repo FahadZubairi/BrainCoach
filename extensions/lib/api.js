@@ -14,12 +14,31 @@ export function fetchTabRules(session) {
   return call(session, '/coach/tab-rules')
 }
 
+// Data minimisation: the backend only needs to know what kind of page this is. Query strings and
+// fragments often hold search terms, tokens or email addresses, and titles can too (e.g. Gmail), so
+// those are stripped before anything leaves the browser.
+export function privateUrl(url) {
+  try {
+    const u = new URL(url)
+    return `${u.origin}${u.pathname}`.slice(0, 2048)
+  } catch {
+    return ''
+  }
+}
+
+export function privateTitle(title) {
+  return (title || '')
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '[email]')
+    .replace(/\d[\d\s-]{5,}\d/g, '[number]')
+    .slice(0, 500)
+}
+
 export function evaluateTabRemote(session, tab) {
   return call(session, '/coach/evaluate-tab', {
     method: 'POST',
     body: JSON.stringify({
-      tabTitle: (tab.title || '').slice(0, 500),
-      tabUrl: tab.url.slice(0, 2048),
+      tabTitle: privateTitle(tab.title),
+      tabUrl: privateUrl(tab.url),
       taskDescription: session.taskDescription,
       sessionProfile: session.profile,
     }),

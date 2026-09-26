@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import NavLink from '../components/NavLink'
+import { PrivacyConsent } from '../components/PrivacyConsent'
 import { Card, Eyebrow, Segmented, StatusDot, Switch } from '../components/ui'
-import type { Prefs } from '../lib/prefs'
+import type { Prefs, Tracker } from '../lib/prefs'
 import { CameraVideo, cameraMessage } from './StatusRows'
 import type { SessionController } from './useSessionController'
 
@@ -9,16 +12,31 @@ export function TrackingCard({ c }: { c: SessionController }) {
   const router = useRouter()
   const { face, ext, screen, prefs, updatePrefs, tracking } = c
   const toExtensionSetup = () => router.push('/extension?from=session')
+  const [asking, setAsking] = useState<{ tracker: Tracker; apply: () => void } | null>(null)
+
+  // First use of each tracker explains exactly what it does with your data; nothing starts until you agree.
+  const withConsent = (tracker: Tracker, apply: () => void) => {
+    if (prefs.consent[tracker]) apply()
+    else setAsking({ tracker, apply })
+  }
+  const chooseTracking = (v: Prefs['tracking']) => {
+    updatePrefs({ tracking: v })
+    // Choosing the extension without it installed takes you straight to guided setup.
+    if (v === 'extension' && !ext.connected) toExtensionSetup()
+  }
 
   return (
     <Card className="flex flex-col gap-6 p-6 sm:p-8">
       <div>
         <Eyebrow>Tracking</Eyebrow>
-        <p className="mt-2 text-[13px] leading-relaxed text-fg-3">Optional. Each signal makes your focus score more honest.</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-fg-3">
+          Optional, and off until you choose. Each signal makes your focus score more honest.{' '}
+          <NavLink href="/privacy" className="text-accent underline-offset-4 hover:underline">How your data is handled</NavLink>
+        </p>
       </div>
 
       <div>
-        <Switch checked={c.cameraOn} onChange={c.toggleCamera} label="Presence via camera" description="Notices when you step away. Processed on-device." />
+        <Switch checked={c.cameraOn} onChange={on => (on ? withConsent('camera', () => c.toggleCamera(true)) : c.toggleCamera(false))} label="Presence via camera" description="Notices when you step away. Processed on-device." />
         {c.cameraOn && (
           <div className="mt-4 overflow-hidden rounded-xl border border-line bg-bg">
             <div className="relative aspect-[4/3]">
@@ -44,9 +62,9 @@ export function TrackingCard({ c }: { c: SessionController }) {
             options={[{ value: 'extension', label: 'Extension' }, { value: 'screen', label: 'Screen check' }, { value: 'off', label: 'Off' }]}
             value={tracking}
             onChange={v => {
-              updatePrefs({ tracking: v as Prefs['tracking'] })
-              // Choosing the extension without it installed takes you straight to guided setup.
-              if (v === 'extension' && !ext.connected) toExtensionSetup()
+              const next = v as Prefs['tracking']
+              if (next === 'off') chooseTracking(next)
+              else withConsent(next, () => chooseTracking(next))
             }}
           />
         </div>
@@ -94,6 +112,17 @@ export function TrackingCard({ c }: { c: SessionController }) {
           </div>
         )}
       </div>
+      {asking && (
+        <PrivacyConsent
+          tracker={asking.tracker}
+          onCancel={() => setAsking(null)}
+          onAllow={() => {
+            updatePrefs({ consent: { ...prefs.consent, [asking.tracker]: true } })
+            asking.apply()
+            setAsking(null)
+          }}
+        />
+      )}
     </Card>
   )
 }

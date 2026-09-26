@@ -6,6 +6,7 @@ import type { AuthResponse } from '../../shared/api'
 import { useAuth } from './context/AuthContext'
 import { BrainOutline, Logo } from './components/Logo'
 import { Button, Field, Icon, cx, inputClass } from './components/ui'
+import NavLink from './components/NavLink'
 import { api } from './lib/api'
 import { markTourPending } from './lib/tour'
 
@@ -156,6 +157,10 @@ export default function Home() {
               {loading ? (isSignup ? 'Creating account…' : 'Signing in…') : (isSignup ? 'Create account' : 'Sign in')}
             </Button>
           </form>
+          <p className="mt-6 text-center text-xs text-fg-3">
+            Tracking is optional and off by default.{' '}
+            <NavLink href="/privacy" className="text-accent underline-offset-4 hover:underline">How we handle your data</NavLink>
+          </p>
         </div>
       </main>
     </div>
