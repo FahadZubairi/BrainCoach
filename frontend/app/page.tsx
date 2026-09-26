@@ -17,7 +17,7 @@ const POINTS = [
 ]
 
 export default function Home() {
-  const { user, login, isLoading, sessionExpired, status, recheck } = useAuth()
+  const { user, login, isLoading, sessionExpired, timedOut, status, recheck } = useAuth()
   const router = useRouter()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
@@ -145,7 +145,13 @@ export default function Home() {
               </div>
             )}
 
-            {!error && sessionExpired && (
+            {!error && timedOut && (
+              <p role="status" className="rounded-xl border border-line-strong bg-surface-2 px-4 py-3 text-sm text-fg-2">
+                You were signed out after 30 minutes of inactivity. Please sign in again.
+              </p>
+            )}
+
+            {!error && !timedOut && sessionExpired && (
               <p role="status" className="rounded-xl border border-line-strong bg-surface-2 px-4 py-3 text-sm text-fg-2">Your session ended. Please sign in again.</p>
             )}
 

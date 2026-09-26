@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { FocusEventType, ExtensionTokenResponse } from '../../../shared/api'
 import { useAuth } from '../context/AuthContext'
 import { ActiveSession, loadActiveSession, saveActiveSession } from '../lib/activeSession'
+import { markActivity, setSessionRunning } from '../lib/idle'
 import { absoluteApiBase, api } from '../lib/api'
 import { TabLogEntry, TabStatus, useExtension } from '../lib/extension'
 import { useParked, usePrefs } from '../lib/prefs'
@@ -180,6 +181,18 @@ export function useSessionController() {
     return () => clearInterval(id)
     // actions/commit/logEvent only touch refs and stable setters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
+
+  // A running session is "using the app" even with no clicks: no idle sign-out, and a heartbeat keeps the
+  // server-side sign-in fresh too.
+  useEffect(() => {
+    if (phase !== 'active') return
+    setSessionRunning(true)
+    const id = setInterval(() => markActivity(), 60_000)
+    return () => {
+      clearInterval(id)
+      setSessionRunning(false)
+    }
   }, [phase])
 
   // Warn before closing the tab mid-session (the session survives a reload, but shouldn't be forgotten).

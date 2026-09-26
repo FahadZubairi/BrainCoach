@@ -63,8 +63,12 @@ All responses are JSON; errors are `{ error }`. Every route except `/auth/*` and
 
 ## Authentication
 
-- **Web app → httpOnly cookie.** Login/signup set `bc_session` (HS256 JWT `{ userId, email, scope: 'session' }`, 7 days,
+- **Web app → httpOnly cookie.** Login/signup set `bc_session` (HS256 JWT `{ userId, email, scope: 'session', authAt }`,
   `HttpOnly; SameSite=Lax; Secure` in production). JavaScript can never read it, so an XSS bug can't steal it.
+  **Idle timeout:** the cookie lives 30 minutes and `requireAuth` renews it (at most once a minute) on every request, capped at
+  7 days from `authAt`; tokens without `authAt` are rejected. In the browser, `lib/idle.ts` signs out after 30 minutes with no
+  input (shared across tabs via localStorage) and pings `/auth/me` every 10 active minutes; a running focus session disables
+  the timeout (`setSessionRunning`) and keeps the server cookie fresh.
   The app calls `GET /auth/me` on load to learn who is signed in; `lib/api.ts` sends `credentials: 'include'`.
 - **CSRF.** Cookie-authenticated writes (POST/PATCH) and login/signup must carry an `Origin` in `CORS_ORIGINS`; otherwise 403.
 - **Extension → scoped Bearer token.** The app fetches `GET /auth/extension-token` (cookie-authenticated) and hands the
