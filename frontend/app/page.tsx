@@ -7,6 +7,7 @@ import { useAuth } from './context/AuthContext'
 import { BrainOutline, Logo } from './components/Logo'
 import { Button, Field, Icon, cx, inputClass } from './components/ui'
 import { api } from './lib/api'
+import { markTourPending } from './lib/tour'
 
 const POINTS = [
   { title: 'Presence', body: 'Your camera notices when you step away. Nothing leaves your device.' },
@@ -40,6 +41,7 @@ export default function Home() {
         body: JSON.stringify({ email, password }),
       })
       login(data.user)
+      if (mode === 'signup') markTourPending()
       router.push('/dashboard')
     } catch (err) {
       setError((err as Error).message)

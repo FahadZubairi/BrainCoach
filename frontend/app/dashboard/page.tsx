@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { HistoryResponse } from '../../../shared/api'
 import AppShell from '../components/AppShell'
 import NavLink from '../components/NavLink'
+import WelcomeTour from '../components/WelcomeTour'
 import { Icon } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { SessionRecord, Stats, api } from '../lib/api'
@@ -22,6 +23,7 @@ export default function Dashboard() {
   return (
     <AppShell>
       <Today />
+      <WelcomeTour />
     </AppShell>
   )
 }

@@ -299,6 +299,18 @@ html[data-nav="fade"]::view-transition-new(page) { --slide-offset: 0 12px; }
   animation: slide-down 0.35s var(--ease-out) both;
 }
 
+/* Welcome tour: the card settles in once; each step's content eases in as you page through */
+@keyframes tour-card {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes tour-step {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: none; }
+}
+.tour-card { animation: tour-card 0.4s var(--ease-out) both; }
+.tour-step { animation: tour-step 0.3s var(--ease-out) both; }
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(*),
   ::view-transition-new(*),
