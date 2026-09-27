@@ -46,7 +46,10 @@ instead of letting Next fall back to 3001 (the extension only talks to `localhos
 `backend/.env` (never commit, never expose to the client), validated at startup by `backend/src/config.ts`:
 `DATABASE_URL`, `JWT_SECRET` (32+ chars), `GEMINI_API_KEY`, optional `GEMINI_MODEL` (default `gemini-2.5-flash`), optional `PORT`,
 optional `CORS_ORIGINS` (comma-separated; default `http://localhost:3000,http://127.0.0.1:3000`),
-optional `TRUST_PROXY` (proxy hops in front of the API; 2 behind Vercel rewrite + Render). Read env only through `config`, never `process.env` directly.
+optional `TRUST_PROXY` (proxy hops in front of the API; 2 behind Vercel rewrite + Render).
+Social sign-in (each provider on only when both values are set): `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`,
+`FACEBOOK_APP_ID`/`FACEBOOK_APP_SECRET`, `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET`; optional `APP_URL` (default: first CORS origin)
+and `OAUTH_REDIRECT_BASE` (default `APP_URL/api`; set `http://localhost:5000` locally). Callback: `<OAUTH_REDIRECT_BASE>/auth/oauth/<provider>/callback`. Read env only through `config`, never `process.env` directly.
 
 Frontend (public, safe to expose): `NEXT_PUBLIC_API_URL` (default `http://localhost:5000`),
 `NEXT_PUBLIC_EXTENSION_URL` (Chrome Web Store listing, once published).

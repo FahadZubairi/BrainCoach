@@ -50,7 +50,7 @@ const sign = (user: AuthUser, scope: 'session' | 'extension', ttl: number, authA
 
 export const signExtensionToken = (user: AuthUser) => sign(user, 'extension', EXTENSION_TTL_SECONDS)
 
-const cookieOptions: CookieOptions = {
+export const cookieOptions: CookieOptions = {
   httpOnly: true,
   secure: config.cookieSecure,
   sameSite: 'lax',
@@ -68,7 +68,7 @@ export function clearSessionCookie(res: Response) {
   res.clearCookie(SESSION_COOKIE, cookieOptions)
 }
 
-function readCookie(req: Request, name: string): string | null {
+export function readCookie(req: Request, name: string): string | null {
   const header = req.headers.cookie
   if (!header) return null
   for (const part of header.split(';')) {

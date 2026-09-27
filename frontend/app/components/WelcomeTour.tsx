@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { LogoMark } from './Logo'
 import { Button, Icon, IconName } from './ui'
-import { clearTour, isTourPending } from '../lib/tour'
+import { clearTour, isTourPending, markTourPending } from '../lib/tour'
 
 // A short, plain-language walkthrough shown once to new users on the Today screen.
 // Written for people who've never used a focus app: what each feature does for them, not how it works.
@@ -54,6 +54,13 @@ export default function WelcomeTour() {
   const nextRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
+    // A brand-new account from Google / Facebook / GitHub arrives as /dashboard?welcome=1.
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('welcome') === '1') {
+      markTourPending()
+      url.searchParams.delete('welcome')
+      window.history.replaceState(null, '', url.pathname + url.search)
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount
     setOpen(isTourPending())
   }, [])

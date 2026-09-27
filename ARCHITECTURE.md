@@ -126,3 +126,11 @@ All responses are JSON; errors are `{ error }`. Every route except `/auth/*` and
 - Camera frames never leave the browser. Screen snapshots are analysed and discarded. The extension strips query strings,
   fragments, email addresses and long numbers from tab URLs and titles before calling `/coach/evaluate-tab`.
 - Face detection checks the whole 640×480 frame, then overlapping tiles, so small or off-centre faces are still found.
+
+## Social sign-in
+
+`routes/oauth.ts` + `services/oauth.ts`: `GET /auth/oauth/providers` (which buttons to show), `GET /auth/oauth/:provider`
+(sets a 10-minute httpOnly `bc_oauth` state cookie, redirects to the provider) and `GET /auth/oauth/:provider/callback`
+(checks state, exchanges the code, reads a **verified** email only, finds or creates the user, sets `bc_session`, redirects to
+`APP_URL/dashboard`, adding `?welcome=1` for new accounts). Social-only accounts get a random unusable password hash, so no
+schema change. Failures redirect to `APP_URL/?oauth_error=cancelled|no_email|unavailable|failed`.

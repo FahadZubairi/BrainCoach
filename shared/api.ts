@@ -110,6 +110,11 @@ export interface SessionProfileResponse {
   profile: SessionProfile
 }
 
+export interface OAuthProvidersResponse {
+  /** Which social sign-in buttons to show: only providers configured on the server. */
+  providers: Record<'google' | 'facebook' | 'github', boolean>
+}
+
 export interface TabVerdict {
   relevant: boolean
   reason: string

@@ -4,6 +4,7 @@ import { config } from './config' // first: validates the environment before any
 import express from 'express'
 import cors from 'cors'
 import authRouter from './routes/auth'
+import oauthRouter from './routes/oauth'
 import sessionsRouter from './routes/sessions'
 import coachRouter from './routes/coach'
 import { errorHandler, notFound } from './middleware/errors'
@@ -43,6 +44,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'BrainCoach API running' })
 })
 
+app.use('/auth/oauth', oauthRouter)
 app.use('/auth', authRouter)
 app.use('/sessions', sessionsRouter)
 app.use('/coach', coachRouter)

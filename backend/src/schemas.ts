@@ -15,6 +15,13 @@ export const Credentials = z.object({
   password: z.string().min(1, 'Password is required').max(200),
 })
 
+export const OAuthProviderParam = z.object({ provider: z.enum(['google', 'facebook', 'github']) })
+export const OAuthCallbackQuery = z.object({
+  code: z.string().max(2048).optional(),
+  state: z.string().max(256).optional(),
+  error: z.string().max(200).optional(),
+})
+
 export const Signup = Credentials.extend({
   password: z.string().min(8, 'Password must be at least 8 characters').max(200),
 })
